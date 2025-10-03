@@ -45,9 +45,27 @@ export const { auth, signIn, signOut, handlers } = NextAuth({
     Google({
       clientId: process.env.AUTH_GOOGLE_ID!,
       clientSecret: process.env.AUTH_GOOGLE_SECRET!,
+      profile(profile) {
+        return {
+          id: profile.sub,
+          name: profile.name,
+          email: profile.email,
+        }
+      },
     })
   ],
   session:{
     strategy:'jwt'
-  }
+  },
+  callbacks: {
+    ...authConfig.callbacks,
+    async signIn({ user, account, profile }) {
+      if (account?.provider === 'google') {
+        // For Google OAuth, we don't need the user to exist in the database
+        // The user info will be stored in the JWT token
+        return true;
+      }
+      return true;
+    },
+  },
 });
